@@ -14,8 +14,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div class="notification-icon"><i class="fas fa-seedling"></i></div>
                 <div class="notification-content">
                     <p class="notification-title">Missão concluída</p>
-                    <p class="notification-message">Você completou a missão "Regar as plantas"</p>
-                    <p class="notification-time">10 minutos atrás</p>
+                    <p class="notification-message">Você completou a missão "Adicionar uma nova planta"</p>
+                    <p class="notification-time">Agora</p>
                 </div>
             </div>
             <div class="notification-item">
@@ -23,15 +23,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div class="notification-content">
                     <p class="notification-title">Nova conquista</p>
                     <p class="notification-message">Você desbloqueou "Agricultor iniciante"</p>
-                    <p class="notification-time">Ontem</p>
+                    <p class="notification-time">Agora</p>
                 </div>
             </div>
             <div class="notification-item">
                 <div class="notification-icon"><i class="fas fa-users"></i></div>
                 <div class="notification-content">
-                    <p class="notification-title">Atividade na comunidade</p>
-                    <p class="notification-message">Leonardo comentou no seu post</p>
-                    <p class="notification-time">2 dias atrás</p>
+                    <p class="notification-title">Acesse a tela de comunidade</p>
+                    <p class="notification-message">Tire suas dúvidas agora!</p>
+                    <p class="notification-time">Agora</p>
                 </div>
             </div>
         </div>
