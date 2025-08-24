@@ -779,260 +779,283 @@
             <img src="Favicon/plant-icon.svg" alt="Ícone Planta" class="footer-icon" />
         </div>
     </footer>
+<script>
+    // Sistema de Níveis - XP e Progresso
+    const LEVELS = [
+        { level: 1, xpRequired: 0, title: "Iniciante" },
+        { level: 2, xpRequired: 100, title: "Aprendiz Verde" },
+        { level: 3, xpRequired: 300, title: "Jardinheiro" },
+        { level: 4, xpRequired: 600, title: "Cultivador" },
+        { level: 5, xpRequired: 1000, title: "Agricultor" },
+        { level: 6, xpRequired: 1500, title: "Mestre Verde" },
+        { level: 7, xpRequired: 2100, title: "Especialista" },
+        { level: 8, xpRequired: 2800, title: "Mestre Jardineiro" },
+        { level: 9, xpRequired: 3600, title: "Lenda Verde" },
+        { level: 10, xpRequired: 4500, title: "Mestre Supremo" }
+    ];
 
-    <script>
-        // Sistema de Níveis - XP e Progresso
-        const LEVELS = [
-            { level: 1, xpRequired: 0, title: "Iniciante" },
-            { level: 2, xpRequired: 100, title: "Aprendiz Verde" },
-            { level: 3, xpRequired: 300, title: "Jardinheiro" },
-            { level: 4, xpRequired: 600, title: "Cultivador" },
-            { level: 5, xpRequired: 1000, title: "Agricultor" },
-            { level: 6, xpRequired: 1500, title: "Mestre Verde" },
-            { level: 7, xpRequired: 2100, title: "Especialista" },
-            { level: 8, xpRequired: 2800, title: "Mestre Jardineiro" },
-            { level: 9, xpRequired: 3600, title: "Lenda Verde" },
-            { level: 10, xpRequired: 4500, title: "Mestre Supremo" }
-        ];
+    // Variáveis globais para controle de plantas e economia
+    let plants = [];
+    let totalSavings = 0;
+    const SAVINGS_PER_PLANT = 25; // R$ 25 por planta
+    
+    // Sistema de XP
+    let userXP = 0;
+    let userLevel = 1;
 
-        // Variáveis globais para controle de plantas e economia
-        let plants = [];
-        let totalSavings = 0;
-        const SAVINGS_PER_PLANT = 25; // R$ 25 por planta
-        
-        // Sistema de XP
-        let userXP = 0;
-        let userLevel = 1;
+    // Variável para controlar se estamos editando uma planta
+    let editingPlantId = null;
 
-        // Elementos do DOM
-        const plantsList = document.getElementById('plants-list');
-        const noPlantsMessage = document.getElementById('no-plants-message');
-        const addPlantBtn = document.getElementById('add-plant-btn');
-        const plantModal = document.getElementById('plant-modal');
-        const confirmPlantBtn = document.getElementById('confirm-plant');
-        const activePlantsCount = document.getElementById('active-plants-count');
-        const savingsAmount = document.getElementById('savings-amount');
-        const totalSavingsElement = document.getElementById('total-savings');
-        const savingsChart = document.getElementById('savings-chart');
-        const savingsTipText = document.getElementById('savings-tip-text');
-        const userLevelElement = document.getElementById('user-level');
-        const headerLevelNumber = document.getElementById('headerLevelNumber');
-        const viewCommunityBtn = document.getElementById('view-community');
-        const accessCommunityBtn = document.getElementById('access-community');
+    // Elementos do DOM
+    const plantsList = document.getElementById('plants-list');
+    const noPlantsMessage = document.getElementById('no-plants-message');
+    const addPlantBtn = document.getElementById('add-plant-btn');
+    const plantModal = document.getElementById('plant-modal');
+    const confirmPlantBtn = document.getElementById('confirm-plant');
+    const activePlantsCount = document.getElementById('active-plants-count');
+    const savingsAmount = document.getElementById('savings-amount');
+    const totalSavingsElement = document.getElementById('total-savings');
+    const savingsChart = document.getElementById('savings-chart');
+    const savingsTipText = document.getElementById('savings-tip-text');
+    const userLevelElement = document.getElementById('user-level');
+    const headerLevelNumber = document.getElementById('headerLevelNumber');
+    const viewCommunityBtn = document.getElementById('view-community');
+    const accessCommunityBtn = document.getElementById('access-community');
 
-        // Inicialização
-        document.addEventListener('DOMContentLoaded', function() {
-            // Carregar dados do usuário
-            loadUserData();
-            
-            // Event listeners
-            addPlantBtn.addEventListener('click', openPlantModal);
-            
-            document.querySelectorAll('.close-modal, .btn-cancel').forEach(btn => {
-                btn.addEventListener('click', closeAllModals);
-            });
-            
-            confirmPlantBtn.addEventListener('click', savePlant);
-            
-            // Eventos para ganhar XP
-            viewCommunityBtn.addEventListener('click', function() {
-                addXP(10, "Visualizou comunidade");
-            });
-            
-            accessCommunityBtn.addEventListener('click', function() {
-                addXP(20, "Acessou comunidade");
-            });
-            
-            // Atualizar valor do progresso
-            const progressInput = document.getElementById('plant-progress');
-            const progressValue = document.getElementById('progress-value');
-            
-            progressInput.addEventListener('input', function() {
-                progressValue.textContent = this.value;
-            });
-            
-            // Inicializar data atual no campo de data
-            const today = new Date().toISOString().split('T')[0];
-            document.getElementById('plant-date').value = today;
-            
-            // Perfil dropdown
-            const profile = document.querySelector('.profile');
-            const dropdownMenu = document.querySelector('.dropdown-menu');
-            const dropdownIcon = document.querySelector('.dropdown-icon');
-            
-            profile.addEventListener('click', function(e) {
-                e.stopPropagation();
-                dropdownMenu.classList.toggle('show');
-                dropdownIcon.classList.toggle('rotate');
-            });
-            
-            // Fechar o menu quando clicar em qualquer lugar fora
-            document.addEventListener('click', function() {
-                dropdownMenu.classList.remove('show');
-                dropdownIcon.classList.remove('rotate');
-            });
-            
-            // Evitar que o menu feche quando clicar nele
-            dropdownMenu.addEventListener('click', function(e) {
-                e.stopPropagation();
-            });
-        });
-
+    // Inicialização
+    document.addEventListener('DOMContentLoaded', function() {
         // Carregar dados do usuário
-        function loadUserData() {
-            // Carregar plantas
-            const savedPlants = localStorage.getItem('userPlants');
-            if (savedPlants) {
-                plants = JSON.parse(savedPlants);
-                updatePlantsList();
-            }
-            
-            // Carregar economia
-            const savedSavings = localStorage.getItem('totalSavings');
-            if (savedSavings) {
-                totalSavings = parseInt(savedSavings);
-                updateSavings();
-            }
-            
-            // Carregar XP e nível
-            const savedXP = localStorage.getItem('userXP');
-            const savedLevel = localStorage.getItem('userLevel');
-            
-            if (savedXP) userXP = parseInt(savedXP);
-            if (savedLevel) userLevel = parseInt(savedLevel);
-            
-            updateLevelDisplay();
-        }
+        loadUserData();
+        
+        // Event listeners
+        addPlantBtn.addEventListener('click', function() {
+            openPlantModal(); // Abrir modal sem ID para modo de adição
+        });
+        
+        document.querySelectorAll('.close-modal, .btn-cancel').forEach(btn => {
+            btn.addEventListener('click', closeAllModals);
+        });
+        
+        confirmPlantBtn.addEventListener('click', savePlant);
+        
+        // Eventos para ganhar XP
+        viewCommunityBtn.addEventListener('click', function() {
+            addXP(10, "Visualizou comunidade");
+        });
+        
+        accessCommunityBtn.addEventListener('click', function() {
+            addXP(20, "Acessou comunidade");
+        });
+        
+        // Atualizar valor do progresso
+        const progressInput = document.getElementById('plant-progress');
+        const progressValue = document.getElementById('progress-value');
+        
+        progressInput.addEventListener('input', function() {
+            progressValue.textContent = this.value;
+        });
+        
+        // Inicializar data atual no campo de data
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('plant-date').value = today;
+        
+        // Perfil dropdown
+        const profile = document.querySelector('.profile');
+        const dropdownMenu = document.querySelector('.dropdown-menu');
+        const dropdownIcon = document.querySelector('.dropdown-icon');
+        
+        profile.addEventListener('click', function(e) {
+            e.stopPropagation();
+            dropdownMenu.classList.toggle('show');
+            dropdownIcon.classList.toggle('rotate');
+        });
+        
+        // Fechar o menu quando clicar em qualquer lugar fora
+        document.addEventListener('click', function() {
+            dropdownMenu.classList.remove('show');
+            dropdownIcon.classList.remove('rotate');
+        });
+        
+        // Evitar que o menu feche quando clicar nele
+        dropdownMenu.addEventListener('click', function(e) {
+            e.stopPropagation();
+        });
+    });
 
-        // Adicionar XP ao usuário
-        function addXP(amount, reason) {
-            const oldLevel = userLevel;
-            userXP += amount;
-            
-            // Verificar se subiu de nível
-            checkLevelUp(oldLevel);
-            
-            // Salvar no localStorage
-            localStorage.setItem('userXP', userXP.toString());
-            
-            // Mostrar notificação
-            showNotification(`+${amount} XP: ${reason}`, 'success');
-            
-            // Atualizar exibição
-            updateLevelDisplay();
+    // Carregar dados do usuário
+    function loadUserData() {
+        // Carregar plantas
+        const savedPlants = sessionStorage.getItem('userPlants');
+        if (savedPlants) {
+            plants = JSON.parse(savedPlants);
+            updatePlantsList();
         }
-
-        // Verificar se o usuário subiu de nível
-        function checkLevelUp(oldLevel) {
-            const newLevel = calculateLevel(userXP);
-            
-            if (newLevel > oldLevel) {
-                userLevel = newLevel;
-                localStorage.setItem('userLevel', userLevel.toString());
-                
-                // Mostrar notificação de level up
-                showLevelUpNotification(newLevel);
-                
-                // Desbloquear conquistas se aplicável
-                checkAchievements(newLevel);
-            }
+        
+        // Carregar economia
+        const savedSavings = sessionStorage.getItem('totalSavings');
+        if (savedSavings) {
+            totalSavings = parseInt(savedSavings);
+            updateSavings();
         }
+        
+        // Carregar XP e nível
+        const savedXP = sessionStorage.getItem('userXP');
+        const savedLevel = sessionStorage.getItem('userLevel');
+        
+        if (savedXP) userXP = parseInt(savedXP);
+        if (savedLevel) userLevel = parseInt(savedLevel);
+        
+        updateLevelDisplay();
+    }
 
-        // Calcular nível baseado no XP
-        function calculateLevel(xp) {
-            for (let i = LEVELS.length - 1; i >= 0; i--) {
-                if (xp >= LEVELS[i].xpRequired) {
-                    return LEVELS[i].level;
-                }
-            }
-            return 1;
+    // Adicionar XP ao usuário
+    function addXP(amount, reason) {
+        const oldLevel = userLevel;
+        userXP += amount;
+        
+        // Verificar se subiu de nível
+        checkLevelUp(oldLevel);
+        
+        // Salvar no sessionStorage
+        sessionStorage.setItem('userXP', userXP.toString());
+        
+        // Mostrar notificação
+        showNotification(`+${amount} XP: ${reason}`, 'success');
+        
+        // Atualizar exibição
+        updateLevelDisplay();
+    }
+
+    // Verificar se o usuário subiu de nível
+    function checkLevelUp(oldLevel) {
+        const newLevel = calculateLevel(userXP);
+        
+        if (newLevel > oldLevel) {
+            userLevel = newLevel;
+            sessionStorage.setItem('userLevel', userLevel.toString());
+            
+            // Mostrar notificação de level up
+            showLevelUpNotification(newLevel);
+            
+            // Desbloquear conquistas se aplicável
+            checkAchievements(newLevel);
         }
+    }
 
-        // Atualizar exibição do nível
-        function updateLevelDisplay() {
-            const currentLevel = LEVELS[userLevel - 1];
-            const nextLevel = LEVELS[userLevel] || LEVELS[LEVELS.length - 1];
-            
-            // Calcular progresso para o próximo nível
-            const xpForNextLevel = nextLevel.xpRequired - currentLevel.xpRequired;
-            const xpProgress = userXP - currentLevel.xpRequired;
-            const progressPercentage = Math.min(100, (xpProgress / xpForNextLevel) * 100);
-            
-            // Atualizar elementos da interface
-            userLevelElement.textContent = `Nv. ${userLevel}`;
-            headerLevelNumber.textContent = userLevel;
-            
-            // Atualizar barra de progresso se existir
-            const xpFill = document.querySelector('.xp-fill');
-            if (xpFill) {
-                xpFill.style.width = `${progressPercentage}%`;
-            }
-            
-            // Atualizar texto de progresso se existir
-            const progressInfo = document.querySelector('.progress-info p');
-            if (progressInfo) {
-                const xpNeeded = nextLevel.xpRequired - userXP;
-                progressInfo.textContent = `${xpNeeded} XP para o próximo nível`;
-            }
-            
-            // Atualizar título do nível se existir
-            const levelTitle = document.querySelector('.progress-info h5');
-            if (levelTitle) {
-                levelTitle.textContent = `Nível ${userLevel} - ${currentLevel.title}`;
-            }
-            
-            // Atualizar gráfico circular se existir
-            const circleFill = document.querySelector('.circle-fill');
-            if (circleFill) {
-                circleFill.setAttribute('stroke-dasharray', `${progressPercentage}, 100`);
-            }
-            
-            const percentageText = document.querySelector('.percentage');
-            if (percentageText) {
-                percentageText.textContent = `${Math.round(progressPercentage)}%`;
+    // Calcular nível baseado no XP
+    function calculateLevel(xp) {
+        for (let i = LEVELS.length - 1; i >= 0; i--) {
+            if (xp >= LEVELS[i].xpRequired) {
+                return LEVELS[i].level;
             }
         }
+        return 1;
+    }
 
-        // Mostrar notificação de level up
-        function showLevelUpNotification(level) {
-            const levelData = LEVELS.find(l => l.level === level);
-            const notification = document.createElement('div');
-            notification.className = 'notification level-up';
-            notification.innerHTML = `
-                <i class="fas fa-trophy"></i>
-                <span>Level Up! Agora você é Nível ${level} - ${levelData.title}</span>
-            `;
-            
-            document.body.appendChild(notification);
-            
+    // Atualizar exibição do nível
+    function updateLevelDisplay() {
+        const currentLevel = LEVELS[userLevel - 1];
+        const nextLevel = LEVELS[userLevel] || LEVELS[LEVELS.length - 1];
+        
+        // Calcular progresso para o próximo nível
+        const xpForNextLevel = nextLevel.xpRequired - currentLevel.xpRequired;
+        const xpProgress = userXP - currentLevel.xpRequired;
+        const progressPercentage = Math.min(100, (xpProgress / xpForNextLevel) * 100);
+        
+        // Atualizar elementos da interface
+        userLevelElement.textContent = `Nv. ${userLevel}`;
+        headerLevelNumber.textContent = userLevel;
+        
+        // Atualizar barra de progresso se existir
+        const xpFill = document.querySelector('.xp-fill');
+        if (xpFill) {
+            xpFill.style.width = `${progressPercentage}%`;
+        }
+        
+        // Atualizar texto de progresso se existir
+        const progressInfo = document.querySelector('.progress-info p');
+        if (progressInfo) {
+            const xpNeeded = nextLevel.xpRequired - userXP;
+            progressInfo.textContent = `${xpNeeded} XP para o próximo nível`;
+        }
+        
+        // Atualizar título do nível se existir
+        const levelTitle = document.querySelector('.progress-info h5');
+        if (levelTitle) {
+            levelTitle.textContent = `Nível ${userLevel} - ${currentLevel.title}`;
+        }
+        
+        // Atualizar gráfico circular se existir
+        const circleFill = document.querySelector('.circle-fill');
+        if (circleFill) {
+            circleFill.setAttribute('stroke-dasharray', `${progressPercentage}, 100`);
+        }
+        
+        const percentageText = document.querySelector('.percentage');
+        if (percentageText) {
+            percentageText.textContent = `${Math.round(progressPercentage)}%`;
+        }
+    }
+
+    // Mostrar notificação de level up
+    function showLevelUpNotification(level) {
+        const levelData = LEVELS.find(l => l.level === level);
+        const notification = document.createElement('div');
+        notification.className = 'notification level-up';
+        notification.innerHTML = `
+            <i class="fas fa-trophy"></i>
+            <span>Level Up! Agora você é Nível ${level} - ${levelData.title}</span>
+        `;
+        
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+            notification.classList.add('show');
+        }, 10);
+        
+        setTimeout(() => {
+            notification.classList.remove('show');
             setTimeout(() => {
-                notification.classList.add('show');
-            }, 10);
-            
-            setTimeout(() => {
-                notification.classList.remove('show');
-                setTimeout(() => {
-                    document.body.removeChild(notification);
-                }, 300);
-            }, 5000);
-        }
+                document.body.removeChild(notification);
+            }, 300);
+        }, 5000);
+    }
 
-        // Verificar conquistas
-        function checkAchievements(newLevel) {
-            // Aqui você pode adicionar lógica para desbloquear conquistas
-            // baseadas no nível ou em outras ações do usuário
-            if (newLevel >= 3) {
-                // Desbloquear conquista de "Jardinheiro"
-                showNotification('Conquista desbloqueada: Jardinheiro!', 'success');
+    // Verificar conquistas
+    function checkAchievements(newLevel) {
+        // Aqui você pode adicionar lógica para desbloquear conquistas
+        // baseadas no nível ou em outras ações do usuário
+        if (newLevel >= 3) {
+            // Desbloquear conquista de "Jardinheiro"
+            showNotification('Conquista desbloqueada: Jardinheiro!', 'success');
+        }
+    }
+
+    // Funções para gerenciar plantas
+    function openPlantModal(plantId = null) {
+        const modal = plantModal;
+        const today = new Date().toISOString().split('T')[0];
+        
+        // Modo edição
+        if (plantId) {
+            editingPlantId = plantId;
+            const plant = plants.find(p => p.id === plantId);
+            
+            if (plant) {
+                document.querySelector('.modal-title').textContent = 'Editar Planta';
+                document.getElementById('plant-name').value = plant.name;
+                document.getElementById('plant-type').value = plant.type;
+                document.getElementById('plant-date').value = plant.plantingDate;
+                document.getElementById('plant-progress').value = plant.progress;
+                document.getElementById('progress-value').textContent = plant.progress;
+                document.getElementById('plant-notes').value = plant.notes || '';
+                
+                document.getElementById('confirm-plant').innerHTML = '<i class="fas fa-save"></i> Salvar Alterações';
             }
-        }
-
-        // Funções para gerenciar plantas
-        function openPlantModal() {
-            const modal = plantModal;
-            const today = new Date().toISOString().split('T')[0];
-            
-            // Modo adição
+        } 
+        // Modo adição
+        else {
+            editingPlantId = null;
             document.querySelector('.modal-title').textContent = 'Adicionar Nova Planta';
             document.getElementById('plant-name').value = '';
             document.getElementById('plant-type').value = '';
@@ -1041,52 +1064,77 @@
             document.getElementById('progress-value').textContent = '0';
             document.getElementById('plant-notes').value = '';
             
-            // Limpar erros
-            document.querySelectorAll('.error-message').forEach(el => {
-                el.style.display = 'none';
-            });
-            
-            // Mostrar modal com animação
-            modal.classList.add('active');
-            document.getElementById('plant-name').focus();
+            document.getElementById('confirm-plant').innerHTML = '<i class="fas fa-plus"></i> Adicionar Planta';
         }
+        
+        // Limpar erros
+        document.querySelectorAll('.error-message').forEach(el => {
+            el.style.display = 'none';
+        });
+        
+        // Mostrar modal com animação
+        modal.classList.add('active');
+        document.getElementById('plant-name').focus();
+    }
 
-        function savePlant() {
-            const nameInput = document.getElementById('plant-name');
-            const typeInput = document.getElementById('plant-type');
-            const dateInput = document.getElementById('plant-date');
-            const progressInput = document.getElementById('plant-progress');
-            const notesInput = document.getElementById('plant-notes');
-            
-            const name = nameInput.value.trim();
-            const type = typeInput.value;
-            const date = dateInput.value;
-            const progress = parseInt(progressInput.value);
-            const notes = notesInput.value;
-            
-            // Validação
-            let isValid = true;
-            
-            if (!name) {
-                showError(nameInput, 'Por favor, insira o nome da planta');
-                isValid = false;
+    function savePlant() {
+        const nameInput = document.getElementById('plant-name');
+        const typeInput = document.getElementById('plant-type');
+        const dateInput = document.getElementById('plant-date');
+        const progressInput = document.getElementById('plant-progress');
+        const notesInput = document.getElementById('plant-notes');
+        
+        const name = nameInput.value.trim();
+        const type = typeInput.value;
+        const date = dateInput.value;
+        const progress = parseInt(progressInput.value);
+        const notes = notesInput.value;
+        
+        // Validação
+        let isValid = true;
+        
+        if (!name) {
+            showError(nameInput, 'Por favor, insira o nome da planta');
+            isValid = false;
+        }
+        
+        if (!type) {
+            showError(typeInput, 'Por favor, selecione o tipo de planta');
+            isValid = false;
+        }
+        
+        if (!date) {
+            showError(dateInput, 'Por favor, selecione a data de plantio');
+            isValid = false;
+        }
+        
+        if (!isValid) return;
+        
+        const formattedDate = new Date(date).toLocaleDateString('pt-BR');
+        const daysRemaining = Math.round((100 - progress) / 5);
+        
+        // Modo edição
+        if (editingPlantId) {
+            // Encontrar a planta e atualizar seus dados
+            const plantIndex = plants.findIndex(p => p.id === editingPlantId);
+            if (plantIndex !== -1) {
+                plants[plantIndex] = {
+                    ...plants[plantIndex],
+                    name,
+                    type,
+                    plantingDate: date,
+                    formattedDate,
+                    progress,
+                    daysRemaining,
+                    notes
+                };
+                
+                // Mostrar mensagem de sucesso
+                showNotification('Planta atualizada com sucesso!', 'success');
             }
-            
-            if (!type) {
-                showError(typeInput, 'Por favor, selecione o tipo de planta');
-                isValid = false;
-            }
-            
-            if (!date) {
-                showError(dateInput, 'Por favor, selecione a data de plantio');
-                isValid = false;
-            }
-            
-            if (!isValid) return;
-            
-            const formattedDate = new Date(date).toLocaleDateString('pt-BR');
-            const daysRemaining = Math.round((100 - progress) / 5);
-            
+        } 
+        // Modo adição
+        else {
             // Adicionar nova planta
             const newPlant = {
                 id: Date.now().toString(),
@@ -1108,192 +1156,201 @@
             // Adicionar XP por plantar
             addXP(30, "Plantou uma nova planta");
             
-            // Salvar no localStorage
-            localStorage.setItem('userPlants', JSON.stringify(plants));
-            localStorage.setItem('totalSavings', totalSavings.toString());
-            
-            // Atualizar a interface
-            updatePlantsList();
-            updateSavings();
-            
-            closeAllModals();
-            
             // Mostrar mensagem de sucesso
             showNotification('Planta adicionada com sucesso! +R$ 25,00 economizados', 'success');
         }
+        
+        // Salvar no sessionStorage
+        sessionStorage.setItem('userPlants', JSON.stringify(plants));
+        sessionStorage.setItem('totalSavings', totalSavings.toString());
+        
+        // Atualizar a interface
+        updatePlantsList();
+        updateSavings();
+        
+        closeAllModals();
+    }
 
-        function deletePlant(plantId) {
-            plants = plants.filter(p => p.id !== plantId);
-            
-            // Atualizar economia (remover R$ 25 por planta)
-            totalSavings = Math.max(0, totalSavings - SAVINGS_PER_PLANT);
-            
-            // Salvar no localStorage
-            localStorage.setItem('userPlants', JSON.stringify(plants));
-            localStorage.setItem('totalSavings', totalSavings.toString());
-            
-            // Atualizar a interface
-            updatePlantsList();
-            updateSavings();
-            
-            // Mostrar mensagem
-            showNotification('Planta removida', 'info');
-        }
+    function deletePlant(plantId) {
+        plants = plants.filter(p => p.id !== plantId);
+        
+        // Atualizar economia (remover R$ 25 por planta)
+        totalSavings = Math.max(0, totalSavings - SAVINGS_PER_PLANT);
+        
+        // Salvar no sessionStorage
+        sessionStorage.setItem('userPlants', JSON.stringify(plants));
+        sessionStorage.setItem('totalSavings', totalSavings.toString());
+        
+        // Atualizar a interface
+        updatePlantsList();
+        updateSavings();
+        
+        // Mostrar mensagem
+        showNotification('Planta removida', 'info');
+    }
 
-        function updatePlantsList() {
-            plantsList.innerHTML = '';
-            
-            if (plants.length === 0) {
-                plantsList.appendChild(noPlantsMessage);
-                noPlantsMessage.style.display = 'block';
-                return;
-            }
-            
-            noPlantsMessage.style.display = 'none';
-            
-            plants.forEach(plant => {
-                const plantHTML = `
-                    <div class="plant-progress-item" data-id="${plant.id}">
-                        <div class="plant-info">
-                            <div>
-                                <h5>${plant.name}</h5>
-                                <span class="plant-date">Plantado em: ${plant.formattedDate}</span>
-                                <span class="plant-type">${plant.type}</span>
-                            </div>
-                        </div>
-                        <div class="progress-container">
-                            <div class="progress-info">
-                                <span>${plant.progress}% completo</span>
-                                <span>~${plant.daysRemaining} dias restantes</span>
-                            </div>
-                            <div class="progress-bar">
-                                <div class="progress-fill" style="width: ${plant.progress}%"></div>
-                            </div>
-                        </div>
-                        <div class="plant-actions">
-                            <button class="btn-action edit-btn">
-                                <i class="fas fa-edit"></i>
-                            </button>
-                            <button class="btn-action delete-btn">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </div>
-                    </div>
-                `;
-                
-                plantsList.insertAdjacentHTML('beforeend', plantHTML);
-            });
-            
-            // Adicionar event listeners para os botões de ação
-            document.querySelectorAll('.delete-btn').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const plantId = this.closest('.plant-progress-item').dataset.id;
-                    if (confirm('Tem certeza que deseja remover esta planta?')) {
-                        deletePlant(plantId);
-                    }
-                });
-            });
-            
-            // Atualizar contador de plantas ativas
-            activePlantsCount.textContent = plants.length;
-        }
-
-        function updateSavings() {
-            // Atualizar valor total economizado
-            const formattedSavings = totalSavings.toFixed(2).replace('.', ',');
-            savingsAmount.textContent = `R$ ${formattedSavings}`;
-            totalSavingsElement.textContent = formattedSavings;
-            
-            // Atualizar gráfico de economia
-            updateSavingsChart();
-            
-            // Atualizar dica de economia
-            if (plants.length === 0) {
-                savingsTipText.textContent = 'Adicione plantas para começar a economizar!';
-            } else if (plants.length < 3) {
-                savingsTipText.textContent = `Você poderia economizar mais R$ ${(75 - totalSavings).toFixed(2).replace('.', ',')} plantando mais ${3 - plants.length} plantas!`;
-            } else {
-                savingsTipText.textContent = 'Parabéns! Continue cultivando para economizar ainda mais.';
-            }
-        }
-
-        function updateSavingsChart() {
-            savingsChart.innerHTML = '';
-            
-            if (plants.length === 0) {
-                savingsChart.innerHTML = `
-                    <div class="no-data-message">
-                        <i class="fas fa-chart-pie"></i>
-                        <p>Adicione plantas para ver seu gráfico de economia</p>
-                    </div>
-                `;
-                return;
-            }
-            
-            // Calcular economia por planta (distribuindo igualmente)
-            const savingsPerPlant = totalSavings / plants.length;
-            
-            plants.forEach(plant => {
-                // Calcular altura da barra (máximo 100% para a planta com maior economia)
-                const maxHeight = Math.max(...plants.map(p => savingsPerPlant));
-                const heightPercentage = (savingsPerPlant / maxHeight) * 100;
-                
-                const chartBarHTML = `
-                    <div class="chart-bar" style="height: ${heightPercentage}%">
-                        <span>${plant.name}</span>
-                        <div class="bar-fill" style="height: 100%"></div>
-                        <span class="bar-value">R$ ${savingsPerPlant.toFixed(2).replace('.', ',')}</span>
-                    </div>
-                `;
-                
-                savingsChart.insertAdjacentHTML('beforeend', chartBarHTML);
-            });
-        }
-
-        // Funções utilitárias
-        function closeAllModals() {
-            plantModal.classList.remove('active');
-        }
-
-        function showError(inputElement, message) {
-            const errorElement = inputElement.nextElementSibling;
-            errorElement.textContent = message;
-            errorElement.style.display = 'block';
-            inputElement.focus();
+    function updatePlantsList() {
+        plantsList.innerHTML = '';
+        
+        if (plants.length === 0) {
+            plantsList.appendChild(noPlantsMessage);
+            noPlantsMessage.style.display = 'block';
+            return;
         }
         
-        function showNotification(message, type = 'info') {
-            // Criar elemento de notificação
-            const notification = document.createElement('div');
-            notification.className = `notification ${type}`;
-            notification.innerHTML = `
-                <i class="fas fa-${type === 'success' ? 'check-circle' : 'info-circle'}"></i>
-                <span>${message}</span>
+        noPlantsMessage.style.display = 'none';
+        
+        plants.forEach(plant => {
+            const plantHTML = `
+                <div class="plant-progress-item" data-id="${plant.id}">
+                    <div class="plant-info">
+                        <div>
+                            <h5>${plant.name}</h5>
+                            <span class="plant-date">Plantado em: ${plant.formattedDate}</span>
+                            <span class="plant-type">${plant.type}</span>
+                        </div>
+                    </div>
+                    <div class="progress-container">
+                        <div class="progress-info">
+                            <span>${plant.progress}% completo</span>
+                            <span>~${plant.daysRemaining} dias restantes</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: ${plant.progress}%"></div>
+                        </div>
+                    </div>
+                    <div class="plant-actions">
+                        <button class="btn-action edit-btn">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn-action delete-btn">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
             `;
             
-            // Adicionar ao corpo
-            document.body.appendChild(notification);
-            
-            // Mostrar notificação
-            setTimeout(() => {
-                notification.classList.add('show');
-            }, 10);
-            
-            // Remover após 3 segundos
-            setTimeout(() => {
-                notification.classList.remove('show');
-                setTimeout(() => {
-                    document.body.removeChild(notification);
-                }, 300);
-            }, 3000);
-        }
-
-        // Fechar modal ao clicar fora
-        plantModal.addEventListener('click', function(e) {
-            if (e.target === plantModal) {
-                closeAllModals();
-            }
+            plantsList.insertAdjacentHTML('beforeend', plantHTML);
         });
-    </script>
+        
+        // Adicionar event listeners para os botões de ação
+        document.querySelectorAll('.edit-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const plantId = this.closest('.plant-progress-item').dataset.id;
+                openPlantModal(plantId);
+            });
+        });
+        
+        document.querySelectorAll('.delete-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const plantId = this.closest('.plant-progress-item').dataset.id;
+                if (confirm('Tem certeza que deseja remover esta planta?')) {
+                    deletePlant(plantId);
+                }
+            });
+        });
+        
+        // Atualizar contador de plantas ativas
+        activePlantsCount.textContent = plants.length;
+    }
+
+    function updateSavings() {
+        // Atualizar valor total economizado
+        const formattedSavings = totalSavings.toFixed(2).replace('.', ',');
+        savingsAmount.textContent = `R$ ${formattedSavings}`;
+        totalSavingsElement.textContent = formattedSavings;
+        
+        // Atualizar gráfico de economia
+        updateSavingsChart();
+        
+        // Atualizar dica de economia
+        if (plants.length === 0) {
+            savingsTipText.textContent = 'Adicione plantas para começar a economizar!';
+        } else if (plants.length < 3) {
+            savingsTipText.textContent = `Você poderia economizar mais R$ ${(75 - totalSavings).toFixed(2).replace('.', ',')} plantando mais ${3 - plants.length} plantas!`;
+        } else {
+            savingsTipText.textContent = 'Parabéns! Continue cultivando para economizar ainda mais.';
+        }
+    }
+
+    function updateSavingsChart() {
+        savingsChart.innerHTML = '';
+        
+        if (plants.length === 0) {
+            savingsChart.innerHTML = `
+                <div class="no-data-message">
+                    <i class="fas fa-chart-pie"></i>
+                    <p>Adicione plantas para ver seu gráfico de economia</p>
+                </div>
+            `;
+            return;
+        }
+        
+        // Calcular economia por planta (distribuindo igualmente)
+        const savingsPerPlant = totalSavings / plants.length;
+        
+        plants.forEach(plant => {
+            // Calcular altura da barra (máximo 100% para a planta com maior economia)
+            const maxHeight = Math.max(...plants.map(p => savingsPerPlant));
+            const heightPercentage = (savingsPerPlant / maxHeight) * 100;
+            
+            const chartBarHTML = `
+                <div class="chart-bar" style="height: ${heightPercentage}%">
+                    <span>${plant.name}</span>
+                    <div class="bar-fill" style="height: 100%"></div>
+                    <span class="bar-value">R$ ${savingsPerPlant.toFixed(2).replace('.', ',')}</span>
+                </div>
+            `;
+            
+            savingsChart.insertAdjacentHTML('beforeend', chartBarHTML);
+        });
+    }
+
+    // Funções utilitárias
+    function closeAllModals() {
+        plantModal.classList.remove('active');
+        editingPlantId = null; // Resetar o ID de edição ao fechar o modal
+    }
+
+    function showError(inputElement, message) {
+        const errorElement = inputElement.nextElementSibling;
+        errorElement.textContent = message;
+        errorElement.style.display = 'block';
+        inputElement.focus();
+    }
+    
+    function showNotification(message, type = 'info') {
+        // Criar elemento de notificação
+        const notification = document.createElement('div');
+        notification.className = `notification ${type}`;
+        notification.innerHTML = `
+            <i class="fas fa-${type === 'success' ? 'check-circle' : 'info-circle'}"></i>
+            <span>${message}</span>
+        `;
+        
+        // Adicionar ao corpo
+        document.body.appendChild(notification);
+        
+        // Mostrar notificação
+        setTimeout(() => {
+            notification.classList.add('show');
+        }, 10);
+        
+        // Remover após 3 segundos
+        setTimeout(() => {
+            notification.classList.remove('show');
+            setTimeout(() => {
+                document.body.removeChild(notification);
+            }, 300);
+        }, 3000);
+    }
+
+    // Fechar modal ao clicar fora
+    plantModal.addEventListener('click', function(e) {
+        if (e.target === plantModal) {
+            closeAllModals();
+        }
+    });
+</script>
 </body>
 </html>

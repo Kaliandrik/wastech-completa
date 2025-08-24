@@ -322,7 +322,7 @@
     <span>Perfil atualizado com sucesso!</span>
   </div>
 
-  <script>
+<script>
     // Sistema de Níveis - XP e Progresso
     const LEVELS = [
       { level: 1, xpRequired: 0, title: "Iniciante" },
@@ -387,14 +387,14 @@
 
       // Inicializar perfil
       function initializeProfile() {
-        // Carregar dados do localStorage
-        const savedXP = localStorage.getItem('userXP');
-        const savedLevel = localStorage.getItem('userLevel');
-        const savedPlants = localStorage.getItem('userPlants');
-        const savedName = localStorage.getItem('wastech_userName');
-        const savedPhoto = localStorage.getItem('wastech_profilePhoto');
-        const savedMissions = localStorage.getItem('completedMissions');
-        const savedWater = localStorage.getItem('waterSaved');
+        // Carregar dados do sessionStorage
+        const savedXP = sessionStorage.getItem('userXP');
+        const savedLevel = sessionStorage.getItem('userLevel');
+        const savedPlants = sessionStorage.getItem('userPlants');
+        const savedName = sessionStorage.getItem('wastech_userName');
+        const savedPhoto = sessionStorage.getItem('wastech_profilePhoto');
+        const savedMissions = sessionStorage.getItem('completedMissions');
+        const savedWater = sessionStorage.getItem('waterSaved');
 
         // Configurar valores
         if (savedXP) userXP = parseInt(savedXP);
@@ -657,8 +657,8 @@
                 profileCircleImg.src = resizedImage;
               }
               
-              // Salvar foto no localStorage
-              localStorage.setItem('wastech_profilePhoto', resizedImage);
+              // Salvar foto no sessionStorage
+              sessionStorage.setItem('wastech_profilePhoto', resizedImage);
               
               // Mostrar notificação e fechar modal
               showNotification('Perfil atualizado com sucesso!', 'success');
@@ -667,8 +667,8 @@
           };
           reader.readAsDataURL(selectedFile);
         } else {
-          // Salvar nome no localStorage
-          localStorage.setItem('wastech_userName', userName);
+          // Salvar nome no sessionStorage
+          sessionStorage.setItem('wastech_userName', userName);
           
           // Mostrar notificação e fechar modal
           showNotification('Perfil atualizado com sucesso!', 'success');
@@ -700,8 +700,8 @@
 
     // Verificar notificações pendentes (como quando o usuário sobe de nível no dashboard)
     function checkForPendingNotifications() {
-      const lastLevel = localStorage.getItem('lastKnownLevel');
-      const currentLevel = localStorage.getItem('userLevel');
+      const lastLevel = sessionStorage.getItem('lastKnownLevel');
+      const currentLevel = sessionStorage.getItem('userLevel');
       
       if (currentLevel && lastLevel && parseInt(currentLevel) > parseInt(lastLevel)) {
         showNotification(`Parabéns! Você alcançou o nível ${currentLevel}!`, 'level-up');
@@ -709,7 +709,7 @@
       
       // Salvar nível atual como último conhecido
       if (currentLevel) {
-        localStorage.setItem('lastKnownLevel', currentLevel);
+        sessionStorage.setItem('lastKnownLevel', currentLevel);
       }
     }
 
@@ -723,6 +723,6 @@
         notification.classList.remove('show');
       }, 3000);
     }
-  </script>
+</script>
 </body>
 </html>
